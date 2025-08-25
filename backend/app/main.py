@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from .routers import chat
+from .routers import chat, games
 
 load_dotenv()
 
-app = FastAPI(title="AI Chat Service", version="1.0.0")
+app = FastAPI(title="AI Chat & Games Service", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,6 +16,7 @@ app.add_middleware(
 )
 
 app.include_router(chat.router)
+app.include_router(games.router)
 
 @app.get("/")
 async def root():

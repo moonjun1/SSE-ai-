@@ -24,8 +24,12 @@ class AIService:
         # DeepSeek API Key
         self.deepseek_key = os.getenv("DEEPSEEK_API_KEY")
     
-    def stream_chat(self, message: str, history: List[ChatMessage] = [], model: str = "openai-gpt3.5") -> Generator[str, None, None]:
+    def stream_chat(self, message: str, history: List[ChatMessage] = [], model: str = "openai-gpt3.5", system_prompt: str = None) -> Generator[str, None, None]:
         messages = []
+        
+        # 시스템 프롬프트 추가
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
         
         for msg in history:
             messages.append({"role": msg.role, "content": msg.content})
