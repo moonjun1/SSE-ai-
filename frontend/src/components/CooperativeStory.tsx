@@ -33,6 +33,7 @@ const CooperativeStory: React.FC<CooperativeStoryProps> = ({ onBack, darkMode })
   const [turnTimeLeft, setTurnTimeLeft] = useState(60);
   const [isConnected, setIsConnected] = useState(false);
   const websocket = useRef<WebSocket | null>(null);
+  const playerIdRef = useRef<string>('');
 
   const genres = [
     { id: 'fantasy', name: '판타지', desc: '마법과 모험이 가득한 세계' },
@@ -43,27 +44,14 @@ const CooperativeStory: React.FC<CooperativeStoryProps> = ({ onBack, darkMode })
     { id: 'adventure', name: '어드벤처', desc: '액션과 모험이 가득한 스토리' }
   ];
 
-  // WebSocket 연결 설정 (현재는 시뮬레이션)
+  // 컴포넌트 언마운트 시 WebSocket 정리
   useEffect(() => {
-    if (gameState === 'waiting' || gameState === 'playing') {
-      // 실제 구현에서는 WebSocket 연결을 설정
-      setIsConnected(true);
-      
-      // 시뮬레이션용 더미 데이터
-      if (isHost) {
-        setPlayers([
-          { id: 'host', name: playerName, isHost: true, isOnline: true },
-          { id: 'player2', name: '플레이어2', isHost: false, isOnline: true }
-        ]);
-      }
-    }
-
     return () => {
       if (websocket.current) {
         websocket.current.close();
       }
     };
-  }, [gameState, playerName, isHost]);
+  }, []);
 
   // 턴 타이머
   useEffect(() => {
@@ -79,55 +67,175 @@ const CooperativeStory: React.FC<CooperativeStoryProps> = ({ onBack, darkMode })
   const createRoom = () => {
     if (!playerName.trim()) return;
     
-    const newRoomId = Math.random().toString(36).substr(2, 6).toUpperCase();
-    setRoomId(newRoomId);
     setIsHost(true);
-    setGameState('waiting');
+    
+    // WebSocket 연결 후 방 생성
+    const playerId = 'player-' + Math.random().toString(36).substr(2, 9);
+    playerIdRef.current = playerId;
+    websocket.current = new WebSocket(`ws://localhost:8000/ws/${playerId}`);
+    
+    websocket.current.onopen = () => {
+      setIsConnected(true);
+      console.log('WebSocket 연결됨');
+      
+      // 연결 후 즉시 방 생성 요청
+      websocket.current?.send(JSON.stringify({
+        type: 'create_room',
+        player_name: playerName,
+        game_settings: {
+          genre: selectedGenre,
+          model: 'openai-gpt3.5'
+        }
+      }));
+    };
+
+    websocket.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      console.log('WebSocket 메시지:', message);
+      
+      if (message.type === 'room_created') {
+        setRoomId(message.room_id);
+        const playerData = Object.entries(message.room_info.players).map(([id, player]) => ({
+          id,
+          name: player.name,
+          isHost: player.is_host,
+          isOnline: player.is_online
+        }));
+        setPlayers(playerData);
+        setGameState('waiting');
+      } else if (message.type === 'room_joined') {
+        const playerData = Object.entries(message.room_info.players).map(([id, player]) => ({
+          id,
+          name: player.name,
+          isHost: player.is_host,
+          isOnline: player.is_online
+        }));
+        setPlayers(playerData);
+      } else if (message.type === 'player_joined') {
+        const playerData = Object.entries(message.room_info.players).map(([id, player]) => ({
+          id,
+          name: player.name,
+          isHost: player.is_host,
+          isOnline: player.is_online
+        }));
+        setPlayers(playerData);
+      } else if (message.type === 'game_started') {
+        setGameState('playing');
+        setStoryContent(message.story_content);
+        setCurrentTurn(message.room_info.current_turn);
+        setIsMyTurn(message.room_info.current_turn === playerIdRef.current);
+      } else if (message.type === 'turn_submitted') {
+        setStoryContent(message.story_content);
+        setCurrentTurn(message.room_info.current_turn);
+        setIsMyTurn(message.room_info.current_turn === playerIdRef.current);
+      } else if (message.type === 'ai_turn_completed') {
+        setStoryContent(message.story_content);
+        setCurrentTurn(message.room_info.current_turn);
+        setIsMyTurn(message.room_info.current_turn === playerIdRef.current);
+      }
+    };
+
+    websocket.current.onclose = () => {
+      setIsConnected(false);
+      console.log('WebSocket 연결 끊김');
+    };
+
+    websocket.current.onerror = (error) => {
+      console.error('WebSocket 오류:', error);
+    };
   };
 
   const joinRoom = () => {
     if (!playerName.trim() || !roomId.trim()) return;
     
     setIsHost(false);
-    setGameState('waiting');
+    
+    // WebSocket 연결 후 방 참가
+    const playerId = 'player-' + Math.random().toString(36).substr(2, 9);
+    playerIdRef.current = playerId;
+    websocket.current = new WebSocket(`ws://localhost:8000/ws/${playerId}`);
+    
+    websocket.current.onopen = () => {
+      setIsConnected(true);
+      console.log('WebSocket 연결됨 (방 참가용)');
+      
+      // 연결 후 즉시 방 참가 요청
+      websocket.current?.send(JSON.stringify({
+        type: 'join_room',
+        player_name: playerName,
+        room_id: roomId
+      }));
+    };
+
+    websocket.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      console.log('WebSocket 메시지 (참가자):', message);
+      
+      if (message.type === 'room_joined') {
+        const playerData = Object.entries(message.room_info.players).map(([id, player]) => ({
+          id,
+          name: player.name,
+          isHost: player.is_host,
+          isOnline: player.is_online
+        }));
+        setPlayers(playerData);
+        setGameState('waiting');
+      } else if (message.type === 'player_joined') {
+        const playerData = Object.entries(message.room_info.players).map(([id, player]) => ({
+          id,
+          name: player.name,
+          isHost: player.is_host,
+          isOnline: player.is_online
+        }));
+        setPlayers(playerData);
+      } else if (message.type === 'game_started') {
+        setGameState('playing');
+        setStoryContent(message.story_content);
+        setCurrentTurn(message.room_info.current_turn);
+        setIsMyTurn(message.room_info.current_turn === playerIdRef.current);
+      } else if (message.type === 'turn_submitted') {
+        setStoryContent(message.story_content);
+        setCurrentTurn(message.room_info.current_turn);
+        setIsMyTurn(message.room_info.current_turn === playerIdRef.current);
+      } else if (message.type === 'ai_turn_completed') {
+        setStoryContent(message.story_content);
+        setCurrentTurn(message.room_info.current_turn);
+        setIsMyTurn(message.room_info.current_turn === playerIdRef.current);
+      } else if (message.type === 'error') {
+        alert(`오류: ${message.message}`);
+        setGameState('setup');
+      }
+    };
+
+    websocket.current.onclose = () => {
+      setIsConnected(false);
+      console.log('WebSocket 연결 끊김 (참가자)');
+    };
+
+    websocket.current.onerror = (error) => {
+      console.error('WebSocket 오류 (참가자):', error);
+    };
   };
 
   const startGame = () => {
-    if (!isHost) return;
+    if (!isHost || !websocket.current) return;
     
-    setGameState('playing');
-    setCurrentTurn(players[0]?.id || '');
-    setIsMyTurn(players[0]?.id === 'host');
-    setTurnTimeLeft(60);
-    
-    // AI가 생성한 스토리 시작
-    const initialStory: StoryTurn = {
-      player: 'AI',
-      text: `${genres.find(g => g.id === selectedGenre)?.name} 장르의 모험이 시작됩니다!\n\n어두운 숲 속에서 당신들은 신비로운 빛을 발견했습니다. 그 빛은 마치 당신들을 부르는 것 같습니다...`,
-      timestamp: Date.now()
-    };
-    
-    setStoryContent([initialStory]);
+    // WebSocket으로 게임 시작 요청
+    websocket.current.send(JSON.stringify({
+      type: 'start_game'
+    }));
   };
 
   const submitTurn = () => {
-    if (!myInput.trim() || !isMyTurn) return;
+    if (!myInput.trim() || !isMyTurn || !websocket.current) return;
 
-    const newTurn: StoryTurn = {
-      player: playerName,
-      text: myInput,
-      timestamp: Date.now()
-    };
+    // WebSocket으로 턴 제출
+    websocket.current.send(JSON.stringify({
+      type: 'submit_turn',
+      text: myInput
+    }));
 
-    setStoryContent(prev => [...prev, newTurn]);
     setMyInput('');
-    
-    // 다음 플레이어로 턴 넘기기
-    const nextPlayerIndex = (players.findIndex(p => p.id === currentTurn) + 1) % players.length;
-    const nextPlayer = players[nextPlayerIndex];
-    setCurrentTurn(nextPlayer?.id || '');
-    setIsMyTurn(nextPlayer?.id === 'host');
-    setTurnTimeLeft(60);
   };
 
   const copyRoomId = () => {
@@ -166,10 +274,10 @@ const CooperativeStory: React.FC<CooperativeStoryProps> = ({ onBack, darkMode })
               darkMode ? 'bg-gray-800' : 'bg-gradient-to-br from-blue-50 to-purple-50'
             }`}>
               <h2 className={`text-2xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                친구와 함께 만드는 이야기!
+                AI와 함께하는 협력 스토리!
               </h2>
               <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                여러 명의 플레이어가 돌아가며 이야기를 작성하여 하나의 완성된 스토리를 만들어보세요.
+                AI 어시스턴트와 함께 실시간으로 협력하여 흥미진진한 스토리를 만들어보세요. WebSocket 기반 실시간 게임입니다.
               </p>
             </div>
 
@@ -361,7 +469,10 @@ const CooperativeStory: React.FC<CooperativeStoryProps> = ({ onBack, darkMode })
                 ))}
               </div>
 
-              {isHost && players.length >= 2 && (
+              {(() => {
+                console.log('게임 시작 버튼 조건:', { isHost, playersLength: players.length, condition: isHost && players.length >= 1 });
+                return isHost && players.length >= 1;
+              })() && (
                 <button
                   onClick={startGame}
                   className={`w-full mt-6 p-3 rounded-xl font-semibold transition-all ${

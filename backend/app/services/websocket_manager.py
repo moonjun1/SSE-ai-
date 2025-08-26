@@ -152,8 +152,19 @@ class ConnectionManager:
         if room['host'] != host_player_id:
             return {'success': False, 'error': '호스트만 게임을 시작할 수 있습니다.'}
         
-        if len(room['players']) < 2:
-            return {'success': False, 'error': '최소 2명의 플레이어가 필요합니다.'}
+        # AI 플레이어가 없으면 자동으로 추가
+        ai_player_exists = any(player['name'] == 'AI 어시스턴트' for player in room['players'].values())
+        if not ai_player_exists:
+            ai_player_id = f"ai_{room_id}"
+            room['players'][ai_player_id] = {
+                'name': 'AI 어시스턴트',
+                'is_host': False,
+                'is_online': True,
+                'joined_at': datetime.now().isoformat()
+            }
+        
+        if len(room['players']) < 1:
+            return {'success': False, 'error': '최소 1명의 플레이어가 필요합니다.'}
         
         # 게임 시작
         room['game_state'] = 'playing'
@@ -166,7 +177,7 @@ class ConnectionManager:
         story_service = StoryGameService()
         
         try:
-            initial_story = await story_service.start_new_story(
+            initial_story = story_service.start_cooperative_story(
                 room['game_settings']['genre'],
                 room['game_settings']['model']
             )
@@ -224,7 +235,63 @@ class ConnectionManager:
             'story_content': room['story_content']
         }, room_id)
         
+        # 다음 턴이 AI인 경우 자동으로 AI 턴 생성
+        if room['current_turn'].startswith('ai_'):
+            await self.handle_ai_turn(room_id)
+        
         return {'success': True}
+
+    async def handle_ai_turn(self, room_id: str):
+        """AI 턴 자동 처리"""
+        if room_id not in self.rooms:
+            return
+        
+        room = self.rooms[room_id]
+        
+        try:
+            # AI 스토리 생성
+            from .story_game_service import StoryGameService
+            story_service = StoryGameService()
+            
+            # 현재 스토리 내용을 AI에게 전달
+            current_story = "\n".join([turn['text'] for turn in room['story_content']])
+            
+            ai_response = story_service.continue_cooperative_story(
+                current_story,
+                room['game_settings']['genre'],
+                room['game_settings']['model']
+            )
+            
+            # AI 턴 추가
+            room['story_content'].append({
+                'player': 'AI 어시스턴트',
+                'text': ai_response['continuation'],
+                'timestamp': datetime.now().isoformat()
+            })
+            
+            # 다음 턴으로 이동
+            player_ids = list(room['players'].keys())
+            ai_player_id = room['current_turn']
+            current_index = player_ids.index(ai_player_id)
+            next_index = (current_index + 1) % len(player_ids)
+            room['current_turn'] = player_ids[next_index]
+            room['turn_start_time'] = datetime.now().isoformat()
+            
+            # 방의 모든 플레이어에게 AI 턴 알림
+            await self.send_room_message({
+                'type': 'ai_turn_completed',
+                'room_info': self.get_room_info(room_id),
+                'story_content': room['story_content']
+            }, room_id)
+            
+        except Exception as e:
+            print(f"AI turn generation error: {e}")
+            # AI 턴 생성 실패 시 스킵하고 다음 플레이어로 이동
+            player_ids = list(room['players'].keys())
+            ai_player_id = room['current_turn']
+            current_index = player_ids.index(ai_player_id)
+            next_index = (current_index + 1) % len(player_ids)
+            room['current_turn'] = player_ids[next_index]
 
     def get_room_info(self, room_id: str) -> Optional[dict]:
         """방 정보 조회"""

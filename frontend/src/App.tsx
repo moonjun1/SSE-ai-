@@ -4,8 +4,10 @@ import { StoryAdventure } from './components/StoryAdventure';
 import { MysteryDetective } from './components/MysteryDetective';
 import { GameSelector } from './components/GameSelector';
 import { MiniGames } from './components/MiniGames';
+import { CooperativeStory } from './components/CooperativeStory';
+import { TimeAttackMystery } from './components/TimeAttackMystery';
 
-type AppMode = 'games' | 'chat' | 'story' | 'mystery' | 'minigames';
+type AppMode = 'games' | 'chat' | 'story' | 'mystery' | 'minigames' | 'cooperative' | 'timeattack';
 
 function App() {
   const [mode, setMode] = useState<AppMode>('games');
@@ -48,6 +50,20 @@ function App() {
       case 'minigames':
         return (
           <MiniGames 
+            darkMode={darkMode} 
+            onBack={() => setMode('games')} 
+          />
+        );
+      case 'cooperative':
+        return (
+          <CooperativeStory 
+            darkMode={darkMode} 
+            onBack={() => setMode('games')} 
+          />
+        );
+      case 'timeattack':
+        return (
+          <TimeAttackMystery 
             darkMode={darkMode} 
             onBack={() => setMode('games')} 
           />

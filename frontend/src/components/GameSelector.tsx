@@ -1,9 +1,9 @@
 import React from 'react';
-import { MessageSquare, BookOpen, Search, Moon, Sun, Gamepad2, Puzzle } from 'lucide-react';
+import { MessageSquare, BookOpen, Search, Moon, Sun, Gamepad2, Puzzle, Users, Timer } from 'lucide-react';
 
 interface GameSelectorProps {
   darkMode: boolean;
-  onSelectMode: (mode: 'games' | 'chat' | 'story' | 'mystery' | 'minigames') => void;
+  onSelectMode: (mode: 'games' | 'chat' | 'story' | 'mystery' | 'minigames' | 'cooperative' | 'timeattack') => void;
   onToggleDarkMode: () => void;
 }
 
@@ -44,6 +44,22 @@ export const GameSelector: React.FC<GameSelectorProps> = ({
       icon: Puzzle,
       color: 'orange',
       features: ['단어 퍼즐', '수학 퀴즈', '기억력 게임', '점수 기록']
+    },
+    {
+      id: 'cooperative',
+      title: '협력 스토리',
+      description: 'AI와 함께 만들어가는 실시간 협력 스토리',
+      icon: Users,
+      color: 'indigo',
+      features: ['AI 협력', 'WebSocket 실시간', '방 생성/참가', '장르 선택']
+    },
+    {
+      id: 'timeattack',
+      title: '타임어택 추리',
+      description: '시간 제한 내에 미스터리를 해결하는 스릴 넘치는 게임',
+      icon: Timer,
+      color: 'red',
+      features: ['시간 제한', '점수 시스템', '난이도 선택', '시간 보너스']
     }
   ];
 
@@ -72,6 +88,18 @@ export const GameSelector: React.FC<GameSelectorProps> = ({
         border: 'border-orange-500',
         text: darkMode ? 'text-orange-300' : 'text-orange-600',
         hover: darkMode ? 'hover:bg-orange-900/30' : 'hover:bg-orange-100'
+      },
+      indigo: {
+        bg: darkMode ? 'bg-indigo-900/20' : 'bg-indigo-50',
+        border: 'border-indigo-500',
+        text: darkMode ? 'text-indigo-300' : 'text-indigo-600',
+        hover: darkMode ? 'hover:bg-indigo-900/30' : 'hover:bg-indigo-100'
+      },
+      red: {
+        bg: darkMode ? 'bg-red-900/20' : 'bg-red-50',
+        border: 'border-red-500',
+        text: darkMode ? 'text-red-300' : 'text-red-600',
+        hover: darkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-100'
       }
     };
     return baseClasses[color as keyof typeof baseClasses];
@@ -174,7 +202,10 @@ export const GameSelector: React.FC<GameSelectorProps> = ({
                           colorClasses.text.includes('blue') ? 'bg-blue-500' :
                           colorClasses.text.includes('purple') ? 'bg-purple-500' :
                           colorClasses.text.includes('green') ? 'bg-green-500' :
-                          'bg-orange-500'
+                          colorClasses.text.includes('orange') ? 'bg-orange-500' :
+                          colorClasses.text.includes('indigo') ? 'bg-indigo-500' :
+                          colorClasses.text.includes('red') ? 'bg-red-500' :
+                          'bg-gray-500'
                         }`}></div>
                         {feature}
                       </li>

@@ -241,3 +241,72 @@ class StoryGameService:
             "turn": context["turn"],
             "history_length": len(context["story_history"])
         }
+
+    def start_cooperative_story(self, genre: str, model: str = "openai-gpt3.5") -> Dict[str, Any]:
+        """협력 모드용 새로운 스토리 시작"""
+        genre_prompts = {
+            "fantasy": "판타지 세계에서 모험을 시작하는",
+            "sci-fi": "미래 우주에서 펼쳐지는 SF",
+            "mystery": "수상한 사건이 벌어지는 미스터리",
+            "horror": "오싹한 공포 요소가 담긴",
+            "romance": "로맨틱한 사랑 이야기의",
+            "adventure": "스릴 넘치는 모험"
+        }
+        
+        system_prompt = f"""당신은 멀티플레이어 협력 스토리텔러입니다. 여러 플레이어가 번갈아가며 {genre_prompts.get(genre, '모험')} 스토리를 만들어갑니다.
+
+규칙:
+1. 흥미진진한 상황으로 스토리를 시작하세요
+2. 2-3문장으로 간결하게 작성
+3. 다음 플레이어가 이어갈 수 있도록 열린 결말로 끝내기
+4. 생생하고 몰입감 있는 서술
+5. 한국어로 작성"""
+
+        initial_prompt = f"{genre_prompts.get(genre, '모험')} 협력 스토리를 시작해주세요. 플레이어들이 함께 이야기를 만들어갈 수 있는 흥미로운 상황으로 시작해주세요."
+        
+        try:
+            story_response = self.ai_service.generate_response(initial_prompt, [], model, system_prompt=system_prompt)
+        except Exception as e:
+            print(f"Cooperative story generation error: {e}")
+            story_response = f"신비로운 여행이 시작됩니다... (AI 오류: {str(e)})"
+        
+        return {
+            "story": story_response,
+            "genre": genre
+        }
+
+    def continue_cooperative_story(self, current_story: str, genre: str, model: str = "openai-gpt3.5") -> Dict[str, Any]:
+        """협력 모드용 스토리 계속하기"""
+        genre_prompts = {
+            "fantasy": "판타지",
+            "sci-fi": "SF",
+            "mystery": "미스터리",
+            "horror": "호러",
+            "romance": "로맨스",
+            "adventure": "어드벤처"
+        }
+        
+        system_prompt = f"""당신은 AI 플레이어로서 {genre_prompts.get(genre, '모험')} 협력 스토리에 참여하고 있습니다.
+
+현재까지의 스토리:
+{current_story}
+
+규칙:
+1. 스토리의 흐름을 자연스럽게 이어가세요
+2. 2-3문장으로 간결하게 작성
+3. 예측 불가능하지만 논리적인 전개
+4. 다른 플레이어가 계속 이어갈 수 있도록 열린 결말
+5. 한국어로 작성
+6. 스토리를 급작스럽게 끝내지 마세요"""
+
+        continuation_prompt = "위 스토리를 자연스럽게 이어서 계속 작성해주세요."
+        
+        try:
+            story_response = self.ai_service.generate_response(continuation_prompt, [], model, system_prompt=system_prompt)
+        except Exception as e:
+            print(f"Cooperative story continuation error: {e}")
+            story_response = "갑자기 예상치 못한 일이 벌어졌습니다..."
+        
+        return {
+            "continuation": story_response
+        }
