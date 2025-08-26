@@ -3,8 +3,9 @@ import { ChatContainer } from './components/ChatContainer';
 import { StoryAdventure } from './components/StoryAdventure';
 import { MysteryDetective } from './components/MysteryDetective';
 import { GameSelector } from './components/GameSelector';
+import { MiniGames } from './components/MiniGames';
 
-type AppMode = 'games' | 'chat' | 'story' | 'mystery';
+type AppMode = 'games' | 'chat' | 'story' | 'mystery' | 'minigames';
 
 function App() {
   const [mode, setMode] = useState<AppMode>('games');
@@ -40,6 +41,13 @@ function App() {
       case 'mystery':
         return (
           <MysteryDetective 
+            darkMode={darkMode} 
+            onBack={() => setMode('games')} 
+          />
+        );
+      case 'minigames':
+        return (
+          <MiniGames 
             darkMode={darkMode} 
             onBack={() => setMode('games')} 
           />

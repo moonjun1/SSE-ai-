@@ -1,9 +1,9 @@
 import React from 'react';
-import { MessageSquare, BookOpen, Search, Moon, Sun, Gamepad2 } from 'lucide-react';
+import { MessageSquare, BookOpen, Search, Moon, Sun, Gamepad2, Puzzle } from 'lucide-react';
 
 interface GameSelectorProps {
   darkMode: boolean;
-  onSelectMode: (mode: 'games' | 'chat' | 'story' | 'mystery') => void;
+  onSelectMode: (mode: 'games' | 'chat' | 'story' | 'mystery' | 'minigames') => void;
   onToggleDarkMode: () => void;
 }
 
@@ -36,6 +36,14 @@ export const GameSelector: React.FC<GameSelectorProps> = ({
       icon: Search,
       color: 'green',
       features: ['3단계 난이도', '질문 기반 수사', '논리적 추리', '매번 다른 사건']
+    },
+    {
+      id: 'minigames',
+      title: '미니 게임',
+      description: '간단하고 재미있는 퍼즐과 퀴즈 게임 모음',
+      icon: Puzzle,
+      color: 'orange',
+      features: ['단어 퍼즐', '수학 퀴즈', '기억력 게임', '점수 기록']
     }
   ];
 
@@ -58,6 +66,12 @@ export const GameSelector: React.FC<GameSelectorProps> = ({
         border: 'border-green-500',
         text: darkMode ? 'text-green-300' : 'text-green-600',
         hover: darkMode ? 'hover:bg-green-900/30' : 'hover:bg-green-100'
+      },
+      orange: {
+        bg: darkMode ? 'bg-orange-900/20' : 'bg-orange-50',
+        border: 'border-orange-500',
+        text: darkMode ? 'text-orange-300' : 'text-orange-600',
+        hover: darkMode ? 'hover:bg-orange-900/30' : 'hover:bg-orange-100'
       }
     };
     return baseClasses[color as keyof typeof baseClasses];
@@ -159,7 +173,8 @@ export const GameSelector: React.FC<GameSelectorProps> = ({
                         <div className={`w-1.5 h-1.5 rounded-full ${
                           colorClasses.text.includes('blue') ? 'bg-blue-500' :
                           colorClasses.text.includes('purple') ? 'bg-purple-500' :
-                          'bg-green-500'
+                          colorClasses.text.includes('green') ? 'bg-green-500' :
+                          'bg-orange-500'
                         }`}></div>
                         {feature}
                       </li>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { flushSync } from 'react-dom';
 import { ArrowLeft, Wand2, Send } from 'lucide-react';
 
 interface StoryAdventureProps {
@@ -16,8 +15,6 @@ const StoryAdventure: React.FC<StoryAdventureProps> = ({ onBack, darkMode }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [customAction, setCustomAction] = useState('');
   const [turn, setTurn] = useState(0);
-  const [fullStoryText, setFullStoryText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
 
   const genres = [
     { id: 'fantasy', name: '판타지', desc: '마법과 모험이 가득한 세계' },
@@ -34,21 +31,12 @@ const StoryAdventure: React.FC<StoryAdventureProps> = ({ onBack, darkMode }) => 
     { id: 'claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' }
   ];
 
-  // 실시간 chunk 추가 함수
-  const addChunkToStory = (chunk: string) => {
-    setCurrentStory(prev => {
-      const newStory = prev + chunk;
-      return newStory;
-    });
-  };
 
   const startNewStory = async () => {
     setIsLoading(true);
-    setCurrentStory('');
     
-    // POST 요청을 먼저 보낸 후 스트리밍 받기
     try {
-      const response = await fetch('/api/games/story/start/stream', {
+      const response = await fetch('/api/games/story/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -57,60 +45,18 @@ const StoryAdventure: React.FC<StoryAdventureProps> = ({ onBack, darkMode }) => 
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to start story stream');
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let receivedSessionId = '';
-      
-      if (reader) {
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
-            
-            for (const line of lines) {
-              if (line.trim().startsWith('data: ')) {
-                try {
-                  const jsonStr = line.trim().slice(6);
-                  if (jsonStr) {
-                    const data = JSON.parse(jsonStr);
-                    console.log('Received streaming data:', data);
-                    
-                    if (data.chunk) {
-                      // 실시간으로 chunk 추가
-                      addChunkToStory(data.chunk);
-                      // 작은 지연으로 자연스러운 효과
-                      await new Promise(resolve => setTimeout(resolve, 50));
-                    }
-                    if (data.session_id && !receivedSessionId) {
-                      receivedSessionId = data.session_id;
-                    }
-                    if (data.done) {
-                      setSessionId(receivedSessionId);
-                      setTurn(1);
-                      setGameState('playing');
-                      break;
-                    }
-                  }
-                } catch (e) {
-                  console.log('JSON parse error:', e, 'for line:', line);
-                }
-              }
-            }
-          }
-        } finally {
-          reader.releaseLock();
-        }
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Story data received:', data);
+        setCurrentStory(data.story);
+        setSessionId(data.session_id);
+        setTurn(data.turn);
+        setGameState('playing');
+      } else {
+        console.error('Failed to start story');
       }
     } catch (error) {
       console.error('Error starting story:', error);
-      setCurrentStory('스토리 생성 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -120,10 +66,9 @@ const StoryAdventure: React.FC<StoryAdventureProps> = ({ onBack, darkMode }) => 
     if (!sessionId) return;
     
     setIsLoading(true);
-    setCurrentStory('');
     
     try {
-      const response = await fetch('/api/games/story/continue/stream', {
+      const response = await fetch('/api/games/story/continue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -134,38 +79,10 @@ const StoryAdventure: React.FC<StoryAdventureProps> = ({ onBack, darkMode }) => 
       });
 
       if (response.ok) {
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
-            
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-                  if (data.chunk) {
-                    // 실시간으로 chunk 추가
-                    addChunkToStory(data.chunk);
-                    // 작은 지연으로 자연스러운 효과
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                  }
-                  if (data.done) {
-                    setTurn(prev => prev + 1);
-                    if (!choice) setCustomAction('');
-                  }
-                } catch (e) {
-                  // JSON 파싱 에러 무시
-                }
-              }
-            }
-          }
-        }
+        const data = await response.json();
+        setCurrentStory(data.story);
+        setTurn(data.turn);
+        if (!choice) setCustomAction('');
       } else {
         console.error('Failed to continue story');
       }
