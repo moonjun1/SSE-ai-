@@ -4,25 +4,46 @@ React + FastAPI 기반의 실시간 AI 채팅 서비스 MVP입니다.
 
 ## 🚀 빠른 실행
 
-### 1단계: 백엔드 실행
+> **💡 처음 설치하시는 분은 [📋 완전한 설치 가이드](docs/installation-guide.md)를 먼저 보세요!**
+
+### ⚡ 이미 설치된 경우
+**Windows 사용자:**
+- `run_backend.bat` 더블클릭
+- `run_frontend.bat` 더블클릭 (새 창)
+
+**macOS/Linux 사용자:**
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+# 터미널 1: 백엔드 실행
+./run_backend.sh
+
+# 터미널 2: 프론트엔드 실행  
+./run_frontend.sh
 ```
 
-### 2단계: 프론트엔드 실행 (새 터미널)
+### 📋 수동 실행 (개발자용)
 ```bash
-cd frontend
-npm install
+# 1단계: 백엔드 실행
+cd backend
+source venv/bin/activate  # Windows: venv\Scripts\activate
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 2단계: 프론트엔드 실행 (새 터미널)
+cd frontend  
 npm run dev
 ```
 
-### 3단계: 접속
-- 프론트엔드: http://localhost:5173
-- 백엔드 API 문서: http://localhost:8000/docs
+### 🌐 접속하기
+- **메인 웹사이트**: http://localhost:5173
+- **API 문서**: http://localhost:8000/docs
+- **WebSocket 테스트**: http://localhost:8000/ws/test
+
+> **❗ 문제 발생시**: [🔧 문제 해결 가이드](docs/troubleshooting.md) 확인
 
 ## 📚 상세 문서
+
+### 📖 시작하기
+- [📋 **완전한 설치 가이드**](docs/installation-guide.md) ⭐ **추천**
+- [🔧 **문제 해결 가이드**](docs/troubleshooting.md) ⭐ **필수**
 
 ### 📖 기본 가이드
 - [📖 프로젝트 개요](docs/overview.md)
