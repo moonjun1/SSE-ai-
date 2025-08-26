@@ -1,10 +1,10 @@
 # AI Chat Service MVP
 
 React + FastAPI 기반의 실시간 AI 채팅 서비스 MVP입니다.
+<img width="2536" height="1445" alt="스크린샷 2025-08-26 151532" src="https://github.com/user-attachments/assets/499d893e-8b51-4896-9a83-97d07c4ed2dc" />
 <img width="1338" height="1252" alt="스크린샷 2025-08-26 151806" src="https://github.com/user-attachments/assets/c2e23b39-ff4d-4f20-80c9-0d10f3ce1658" />
 <img width="1360" height="1251" alt="스크린샷 2025-08-26 151711" src="https://github.com/user-attachments/assets/20cd6663-9042-4dbe-9394-a20781957560" />
 <img width="1435" height="1444" alt="스크린샷 2025-08-26 151610" src="https://github.com/user-attachments/assets/fa3bb60e-ab2e-4329-9c4a-b503f0d5d7c1" />
-<img width="2536" height="1445" alt="스크린샷 2025-08-26 151532" src="https://github.com/user-attachments/assets/499d893e-8b51-4896-9a83-97d07c4ed2dc" />
 <img width="1315" height="1225" alt="스크린샷 2025-08-26 151935" src="https://github.com/user-attachments/assets/563d28e7-e734-476b-9515-5a7f11e73586" />
 <img width="1698" height="893" alt="스크린샷 2025-08-26 151918" src="https://github.com/user-attachments/assets/e0979ac2-a546-47c4-bee3-3d56fc67cef8" />
 <img width="1751" height="1256" alt="스크린샷 2025-08-26 151902" src="https://github.com/user-attachments/assets/e39f3ee4-ef47-4fda-afff-4e7c6c9cbfe5" />
